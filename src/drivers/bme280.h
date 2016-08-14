@@ -72,8 +72,10 @@
 #define BME280_STATUS_REG     (0xF3)
 
 bool init_bme280(void);
-void read_baro(void);
-void read_tempeture(void);
-void read_humidity(void);
+bool bme280_measurement(void); //Run and aquire data from sensor
+
+float get_baro(void); //Get last measurement
+float get_tempeture(void);
+float get_humidity(void);
 
 #endif /* SRC_DRIVERS_BME280_H_ */

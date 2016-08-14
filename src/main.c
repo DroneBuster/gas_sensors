@@ -62,7 +62,6 @@ int main(void) {
 //  sdStart(&SD1, NULL);
   i2cStart(&I2CD1, &i2cconfig);
   init_bme280();
-
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO+1, Thread1, NULL);
 
   /*
@@ -70,7 +69,16 @@ int main(void) {
    * sleeping in a loop and check the button state, when the button is
    * pressed the test procedure is launched.
    */
+  float temp = 0.0;
+  float hum = 0.0;
+  float press = 0.0;
   while (true) {
-    chThdSleepMilliseconds(500);
+
+    bme280_measurement();
+    temp = get_tempeture();
+    hum = get_humidity();
+    press = get_baro();
+    chThdSleepMilliseconds(1000);
+
   }
 }
