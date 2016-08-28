@@ -47,13 +47,13 @@ void __early_init(void) {
 bool mmc_lld_is_card_inserted(MMCDriver *mmcp) {
 
   (void)mmcp;
-  return palReadPad(GPIOC, GPIOC_MMCCP);
+  return !palReadPad(GPIOA, GPIOA_CARD_DETECT);
 }
 
 bool mmc_lld_is_write_protected(MMCDriver *mmcp) {
 
   (void)mmcp;
-  return !palReadPad(GPIOC, GPIOC_MMCWP);
+  return false;
 }
 #endif
 

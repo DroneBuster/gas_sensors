@@ -99,6 +99,7 @@ include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 # Other files (optional).
 include $(CHIBIOS)/test/rt/test.mk
+include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/STM32F103xB.ld
@@ -112,8 +113,13 @@ CSRC = $(STARTUPSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
+       $(FATFSSRC) \
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        src/main.c \
-       src/drivers/bme280.c
+       src/drivers/bme280.c \
+       src/logging.c \
+       src/usbcfg.c \
+       src/telemetry.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -143,8 +149,8 @@ TCPPSRC =
 ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(CHIBIOS)/os/various src/drivers
+         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) $(FATFSINC) \
+         $(CHIBIOS)/os/various src/drivers src  $(CHIBIOS)/os/hal/lib/streams
 
 #
 # Project, sources and paths

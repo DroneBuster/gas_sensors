@@ -178,6 +178,7 @@ bool bme280_measurement(void)
   uint8_t buff[8];
   read_register(BME280_I2C_ADDRESS, BME280_PRESS_MSB_REG, buff, 8);
 
+  //chMtxLock(&bme280_data);
   int32_t adc_P = (buff[0] << 12) | (buff[1] << 4) | ((buff[2] & 0xF0) >> 4);
   last_pressure = BME280_compensate_P_int64(adc_P) / 256.0;
 
@@ -186,7 +187,7 @@ bool bme280_measurement(void)
 
   int32_t adc_H = (buff[6] << 8) | buff[7];
   last_humidity = bme280_compensate_H_int32(adc_H) / 1024.0;
-
+  //chMtxUnlock(&bme280_data);
   return true;
 }
 

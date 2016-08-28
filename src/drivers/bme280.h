@@ -71,6 +71,8 @@
 //Status registers
 #define BME280_STATUS_REG     (0xF3)
 
+static mutex_t bme280_data;
+
 bool init_bme280(void);
 bool bme280_measurement(void); //Run and aquire data from sensor
 
