@@ -81,9 +81,9 @@ int main(void) {
     usbStart(serusbcfg.usbp, &usbcfg);
     // usbConnectBus(serusbcfg.usbp);
 
-    chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1,
+    /*chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1,
             NULL);
-
+*/
     init_telemetry();
     //init_logging();
     //write_to_file();
