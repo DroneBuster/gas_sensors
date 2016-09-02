@@ -85,6 +85,15 @@ endif
 # Define project name here
 PROJECT = gas_sensors
 
+# Output directory and files
+ifeq ($(BUILDDIR),)
+  BUILDDIR = build
+endif
+ifeq ($(BUILDDIR),.)
+  BUILDDIR = build
+endif
+
+
 # Imported source files and paths
 CHIBIOS = modules/ChibiOS
 # Startup files.
@@ -100,6 +109,20 @@ include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 # Other files (optional).
 include $(CHIBIOS)/test/rt/test.mk
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
+
+# mavlink header generation
+MAVLINK_SUBDIR = v1.0
+MAVLINK_WIRE_PROTOCOL = 1.0
+MAVLINK_DIR = modules/mavlink
+MESSAGE_DEFINITIONS = modules/mavlink/message_definitions/v1.0
+# MAVLINK_HEADERS = 
+MAVLINK_OUTPUT_DIR = $(BUILDDIR)/modules/mavlink/$(MAVLINK_SUBDIR)
+
+#@echo Generating MAVLink headers...
+#goto mavlink module directory and run the most recent generator script
+#@echo "Generating C code using mavgen.py located at" /modules/mavlink/
+$(info $(shell python $(MAVLINK_DIR)/pymavlink/tools/mavgen.py --lang=C --wire-protocol=$(MAVLINK_WIRE_PROTOCOL) --output=$(MAVLINK_OUTPUT_DIR) $(MESSAGE_DEFINITIONS)/ardupilotmega.xml))
+
 
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/STM32F103xB.ld
@@ -150,7 +173,8 @@ ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) $(FATFSINC) \
-         $(CHIBIOS)/os/various src/drivers src  $(CHIBIOS)/os/hal/lib/streams
+         $(CHIBIOS)/os/various src/drivers src  $(CHIBIOS)/os/hal/lib/streams \
+         $(MAVLINK_OUTPUT_DIR)/common
 
 #
 # Project, sources and paths

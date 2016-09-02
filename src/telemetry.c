@@ -3,7 +3,7 @@
 
 #include "telemetry.h"
 #include "usbcfg.h"
-#include "mavlink/common/mavlink.h"
+#include "mavlink.h"
 #include "chprintf.h"
 #include "bme280.h"
 
