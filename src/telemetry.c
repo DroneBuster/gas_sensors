@@ -18,6 +18,7 @@ void handle_1hz(void);
 void handle_mavlink_message(mavlink_message_t msg);
 
 static void led_cb(void *arg) {
+    (void) arg;
 	palClearPad(GPIOB, GPIOB_STATUS_LED);
 }
 
@@ -27,17 +28,14 @@ void blink() {
 }
 
 /*
- * Mavlink receive and hearth beat thread
+ * Mavlink receive
  */
-static THD_WORKING_AREA(waMavlinkThread, 5000);
+static THD_WORKING_AREA(waMavlinkThread, 2000);
 static THD_FUNCTION(MavlinkThread, arg) {
 
 	(void) arg;
 	static mavlink_message_t msg;
 	static mavlink_status_t status;
-	uint8_t bufS[MAVLINK_MAX_PACKET_LEN];
-
-	systime_t last_hearth_beat = chVTGetSystemTime();
 
 	event_listener_t serialData;
 	eventflags_t flags;
@@ -59,45 +57,44 @@ static THD_FUNCTION(MavlinkThread, arg) {
 				}
 			} while(charData != Q_TIMEOUT);
 		}
-		systime_t now = chVTGetSystemTime();
-		systime_t next_t = last_hearth_beat + MS2ST(1000);
-		if (last_hearth_beat + MS2ST(1000) < now) {
-			handle_1hz();
-			last_hearth_beat = now;
-		}
 	}
 	/* This point may be reached if shut down is requested. */
 }
 
-void handle_1hz(void) {
+static THD_WORKING_AREA(waMavlinkTx, 1000);
+static THD_FUNCTION(MavlinkTx, arg) {
+
 	mavlink_message_t msgs;
 	uint16_t len;
-	//chMtxLock(&bme280_data);
-	float temp = get_tempeture();
-	float baro = get_baro();
-	float hum = get_humidity();
-	mavlink_msg_nav_controller_output_pack(mavlink_system.sysid,
-			mavlink_system.compid, &msgs, ST2MS(chVTGetSystemTime()), temp,
-			baro, 0, 0, 0, hum, 0.0f);
-	len = mavlink_msg_to_send_buffer(bufS, &msgs);
-	chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
+	while(true) {
+        float temp = get_tempeture();
+        float baro = get_baro();
+        float hum = get_humidity();
 
-	// Define the system type, in this case an airplane
-	uint8_t system_type = MAV_TYPE_GIMBAL;
-	uint8_t autopilot_type = MAV_AUTOPILOT_INVALID;
+        mavlink_msg_gas_sensor_board_pack(mavlink_system.sysid,
+                mavlink_system.compid, &msgs, hum, temp, baro, 0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f);
+        len = mavlink_msg_to_send_buffer(bufS, &msgs);
+        chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
 
-	uint8_t system_mode = MAV_MODE_AUTO_ARMED; ///< Booting up
-	uint32_t custom_mode = 0;   ///< Custom mode, can be defined by user/adopter
-	uint8_t system_state = MAV_STATE_ACTIVE; ///< System ready for flight
+        // Define the system type, in this case an airplane
+        uint8_t system_type = MAV_TYPE_GIMBAL;
+        uint8_t autopilot_type = MAV_AUTOPILOT_INVALID;
 
-	// Pack the message
-	mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid,
-			&msgs, system_type, autopilot_type, system_mode, custom_mode,
-			system_state);
-	// Copy the message to the send buffer
-	len = mavlink_msg_to_send_buffer(bufS, &msgs);
-	chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
+        uint8_t system_mode = MAV_MODE_AUTO_ARMED; ///< Booting up
+        uint32_t custom_mode = 0;   ///< Custom mode, can be defined by user/adopter
+        uint8_t system_state = MAV_STATE_ACTIVE; ///< System ready for flight
 
+        // Pack the message
+        mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid,
+                &msgs, system_type, autopilot_type, system_mode, custom_mode,
+                system_state);
+        // Copy the message to the send buffer
+        len = mavlink_msg_to_send_buffer(bufS, &msgs);
+        chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
+
+        chThdSleepMilliseconds(1000);
+	}
 }
 
 void handle_mavlink_message(mavlink_message_t msg) {
@@ -124,6 +121,10 @@ void handle_mavlink_message(mavlink_message_t msg) {
 			len = mavlink_msg_to_send_buffer(bufS, &msgs);
 			chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
 		}
+		case MAVLINK_MSG_ID_DATA_STREAM: {
+		    mavlink_data_stream_t decode;
+		    mavlink_msg_data_stream_decode(&msg, &decode);
+		}
 	}
 }
 
@@ -136,5 +137,7 @@ void init_telemetry() {
 
 	chThdCreateStatic(waMavlinkThread, sizeof(waMavlinkThread), NORMALPRIO + 1,
 			MavlinkThread, NULL);
+	chThdCreateStatic(waMavlinkTx, sizeof(waMavlinkTx), NORMALPRIO + 1,
+	            MavlinkTx, NULL);
 }
 

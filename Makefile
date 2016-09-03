@@ -174,7 +174,7 @@ ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) $(FATFSINC) \
          $(CHIBIOS)/os/various src/drivers src  $(CHIBIOS)/os/hal/lib/streams \
-         $(MAVLINK_OUTPUT_DIR)/common
+         $(MAVLINK_OUTPUT_DIR)/ardupilotmega
 
 #
 # Project, sources and paths
