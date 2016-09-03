@@ -16,6 +16,7 @@ static virtual_timer_t led_vt; //Timer for rx
 
 void handle_1hz(void);
 void handle_mavlink_message(mavlink_message_t msg);
+void blink(void);
 
 static void led_cb(void *arg) {
     (void) arg;
@@ -63,6 +64,7 @@ static THD_FUNCTION(MavlinkThread, arg) {
 
 static THD_WORKING_AREA(waMavlinkTx, 1000);
 static THD_FUNCTION(MavlinkTx, arg) {
+    (void) arg;
 
 	mavlink_message_t msgs;
 	uint16_t len;

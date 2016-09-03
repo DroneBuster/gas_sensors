@@ -142,7 +142,8 @@ CSRC = $(STARTUPSRC) \
        src/drivers/bme280.c \
        src/logging.c \
        src/usbcfg.c \
-       src/telemetry.c
+       src/telemetry.c \
+       src/drivers/analog.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

@@ -21,25 +21,9 @@
 #include "usbcfg.h"
 #include "chprintf.h"
 #include "telemetry.h"
+#include "analog.h"
 //#include "logging.h"
 
-/*
- * Blinker thread.
- */
-static THD_WORKING_AREA(waThread1, 128);
-static THD_FUNCTION(Thread1, arg) {
-
-    (void) arg;
-
-    chRegSetThreadName("blinker");
-    while (true) {
-        palSetPad(GPIOB, GPIOB_STATUS_LED);
-        chThdSleepMilliseconds(500);
-        palClearPad(GPIOB, GPIOB_STATUS_LED);
-        chThdSleepMilliseconds(500);
-        //chprintf((BaseSequentialStream *)&SDU1, "Test");
-    }
-}
 
 static const I2CConfig i2cconfig = { OPMODE_I2C, 100000, //100kHz
         STD_DUTY_CYCLE };
@@ -85,6 +69,8 @@ int main(void) {
             NULL);
 */
     init_telemetry();
+    init_analog();
+    measure_sensors();
     //init_logging();
     //write_to_file();
 
@@ -93,9 +79,6 @@ int main(void) {
      * sleeping in a loop and check the button state, when the button is
      * pressed the test procedure is launched.
      */
-    float temp = 0.0;
-    float hum = 0.0;
-    float press = 0.0;
     while (true) {
         bme280_measurement();
         chThdSleepMilliseconds(1000);
