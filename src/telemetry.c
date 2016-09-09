@@ -3,18 +3,16 @@
 
 #include "telemetry.h"
 #include "usbcfg.h"
+#include "mavlink_bridge.h" /* Has to be before mavlink.h */
 #include "mavlink.h"
 #include "chprintf.h"
 #include "bme280.h"
 
 #define SERIAL_DEVICE SDU1
 
-mavlink_system_t mavlink_system;
-uint8_t bufS[MAVLINK_MAX_PACKET_LEN]; //Send buffer
-
 static virtual_timer_t led_vt; //Timer for rx
 
-void handle_1hz(void);
+void requset_gps_data_stream(void);
 void handle_mavlink_message(mavlink_message_t msg);
 void blink(void);
 
@@ -66,18 +64,14 @@ static THD_WORKING_AREA(waMavlinkTx, 1000);
 static THD_FUNCTION(MavlinkTx, arg) {
     (void) arg;
 
-	mavlink_message_t msgs;
-	uint16_t len;
+
 	while(true) {
         float temp = get_tempeture();
         float baro = get_baro();
         float hum = get_humidity();
 
-        mavlink_msg_gas_sensor_board_pack(mavlink_system.sysid,
-                mavlink_system.compid, &msgs, hum, temp, baro, 0.0f, 0.0f, 0.0f,
+        mavlink_msg_gas_sensor_board_send(MAVLINK_COMM_0, hum, temp, baro, 0.0f, 0.0f, 0.0f,
                 0.0f, 0.0f);
-        len = mavlink_msg_to_send_buffer(bufS, &msgs);
-        chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
 
         // Define the system type, in this case an airplane
         uint8_t system_type = MAV_TYPE_GIMBAL;
@@ -88,12 +82,7 @@ static THD_FUNCTION(MavlinkTx, arg) {
         uint8_t system_state = MAV_STATE_ACTIVE; ///< System ready for flight
 
         // Pack the message
-        mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid,
-                &msgs, system_type, autopilot_type, system_mode, custom_mode,
-                system_state);
-        // Copy the message to the send buffer
-        len = mavlink_msg_to_send_buffer(bufS, &msgs);
-        chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
+        mavlink_msg_heartbeat_send(MAVLINK_COMM_0, system_type, autopilot_type, system_mode, custom_mode, system_state);
 
         chThdSleepMilliseconds(1000);
 	}
@@ -107,27 +96,22 @@ void handle_mavlink_message(mavlink_message_t msg) {
 			break;
 		}
 		case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-			 //mavlink_param_value_t pack;
-			mavlink_message_t msgs;
-			uint16_t len;
-			mavlink_msg_param_value_pack(mavlink_system.sysid, mavlink_system.compid, &msgs,
-				"TEST1\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 0);
-			len = mavlink_msg_to_send_buffer(bufS, &msgs);
-			chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
-			mavlink_msg_param_value_pack(mavlink_system.sysid, mavlink_system.compid, &msgs,
-				"TEST2\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 1);
-			len = mavlink_msg_to_send_buffer(bufS, &msgs);
-			chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
-			mavlink_msg_param_value_pack(mavlink_system.sysid, mavlink_system.compid, &msgs,
-				"TEST3\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 2);
-			len = mavlink_msg_to_send_buffer(bufS, &msgs);
-			chnWriteTimeout(&SERIAL_DEVICE, bufS, len, MS2ST(100));
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST1\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 0);
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST2\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 1);
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST3\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 2);
 		}
 		case MAVLINK_MSG_ID_DATA_STREAM: {
 		    mavlink_data_stream_t decode;
 		    mavlink_msg_data_stream_decode(&msg, &decode);
 		}
 	}
+}
+
+void requset_gps_data_stream(void){
+    /* Request stream with GPS coordinates */
+    /* We should detect autopilot system  and use its sysid and comid and then requset stream
+     * also use timeouts for rerequest etc. */
+    mavlink_msg_request_data_stream_send(MAVLINK_COMM_0, 1, 1, MAV_DATA_STREAM_EXTENDED_STATUS, 10, 1);
 }
 
 void init_telemetry() {

@@ -54,6 +54,7 @@ int main(void) {
      */
     sduObjectInit(&SDU1);
     sduStart(&SDU1, &serusbcfg);
+    sdStart(&SD1, NULL);
 
     /*
      * Activates the USB driver and then the USB bus pull-up on D+.
