@@ -11,6 +11,7 @@
 #define SERIAL_DEVICE SDU1
 
 static virtual_timer_t led_vt; //Timer for rx
+position_t last_pos;
 
 void requset_gps_data_stream(void);
 void handle_mavlink_message(mavlink_message_t msg);
@@ -84,6 +85,7 @@ static THD_FUNCTION(MavlinkTx, arg) {
         // Pack the message
         mavlink_msg_heartbeat_send(MAVLINK_COMM_0, system_type, autopilot_type, system_mode, custom_mode, system_state);
 
+        requset_gps_data_stream();
         chThdSleepMilliseconds(1000);
 	}
 }
@@ -96,13 +98,23 @@ void handle_mavlink_message(mavlink_message_t msg) {
 			break;
 		}
 		case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST1\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 0);
-			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST2\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 1);
-			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST3\0", 1.0f, MAV_PARAM_TYPE_UINT8, 1, 2);
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST1\0", 1.0f, MAV_PARAM_TYPE_UINT8, 3, 0);
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST2\0", 1.0f, MAV_PARAM_TYPE_UINT8, 3, 1);
+			mavlink_msg_param_value_send(MAVLINK_COMM_0, "TEST3\0", 1.0f, MAV_PARAM_TYPE_UINT8, 3, 2);
+			break;
+		}
+		case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
+		    mavlink_global_position_int_t decode;
+		    mavlink_msg_global_position_int_decode(&msg,  &decode);
+		    last_pos.lat = decode.lat;
+		    last_pos.lon = decode.lon;
+		    last_pos.alt = decode.alt;
+		    break;
 		}
 		case MAVLINK_MSG_ID_DATA_STREAM: {
 		    mavlink_data_stream_t decode;
 		    mavlink_msg_data_stream_decode(&msg, &decode);
+		    break;
 		}
 	}
 }
@@ -111,7 +123,7 @@ void requset_gps_data_stream(void){
     /* Request stream with GPS coordinates */
     /* We should detect autopilot system  and use its sysid and comid and then requset stream
      * also use timeouts for rerequest etc. */
-    mavlink_msg_request_data_stream_send(MAVLINK_COMM_0, 1, 1, MAV_DATA_STREAM_EXTENDED_STATUS, 10, 1);
+    mavlink_msg_request_data_stream_send(MAVLINK_COMM_0, 1, 1, MAV_DATA_STREAM_POSITION, 10, 1);
 }
 
 void init_telemetry() {

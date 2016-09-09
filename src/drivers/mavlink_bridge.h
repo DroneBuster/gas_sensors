@@ -9,7 +9,7 @@
 #include "usbcfg.h"
 
 
-mavlink_system_t mavlink_system = {100, 50}; /* SysID, CompID */
+mavlink_system_t mavlink_system = {1, 50}; /* SysID, CompID */
 
 /**
  * @brief Send one char (uint8_t) over a comm channel
