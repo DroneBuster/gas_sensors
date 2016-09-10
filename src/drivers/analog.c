@@ -12,6 +12,15 @@
 
 static adcsample_t samples1[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
 
+static float no_gas_avg = 0.0f;
+static float so2_gas_avg = 0.0f;
+
+static float co_gas;
+static float no2_gas;
+static float nh3_gas;
+
+static mutex_t analog_data;
+
 float measureResistance(void);
 float get_voltage(adcsample_t sample);
 void select_sensor(sensor_types_t sensor);
@@ -59,14 +68,7 @@ ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN2)  /* SQR3 */
 };
 
 void measure_sensors(void) {
-    uint16_t resistance_avg = 0;
-    uint16_t no_gas_avg = 0;
-    uint16_t so2_gas_avg = 0;
-
-    float co_gas;
-    float no2_gas;
-    float nh3_gas;
-
+    chMtxLock(&analog_data);
     select_sensor(CO_SENSOR);
     co_gas = measureResistance();
 
@@ -87,6 +89,7 @@ void measure_sensors(void) {
         so2_gas_avg += samples1[i];
     }
     so2_gas_avg /= ADC_GRP1_BUF_DEPTH;
+    chMtxUnlock(&analog_data);
 
 }
 
@@ -177,15 +180,26 @@ float measureResistance(void) {
     return resistance;
 }
 
-float get_voltage(adcsample_t sample)
+inline float get_voltage(adcsample_t sample)
 {
     return (REFERENCE_VOLTAGE / ADC_BITS) * sample;
+}
+
+void get_analog_sensor_values(float *co, float *no2, float *nh3, float *no, float *so2) {
+    chMtxLock(&analog_data);
+    *co = co_gas;
+    *no2 = no2_gas;
+    *nh3 = nh3_gas;
+    *no = no_gas_avg;
+    *so2 = so2_gas_avg;
+    chMtxUnlock(&analog_data);
 }
 
 
 
 void init_analog(void) {
     adcStart(&ADCD1, NULL);
+    chMtxObjectInit(&analog_data);
     return;
 }
 

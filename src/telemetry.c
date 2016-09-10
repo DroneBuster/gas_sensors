@@ -7,6 +7,7 @@
 #include "mavlink.h"
 #include "chprintf.h"
 #include "bme280.h"
+#include "analog.h"
 
 #define SERIAL_DEVICE SDU1
 
@@ -70,12 +71,14 @@ static THD_FUNCTION(MavlinkTx, arg) {
         float temp = get_tempeture();
         float baro = get_baro();
         float hum = get_humidity();
+        float co_gas, no2_gas, nh3_gas, no_gas, so2_gas;
 
-        mavlink_msg_gas_sensor_board_send(MAVLINK_COMM_0, hum, temp, baro, 0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f);
+        get_analog_sensor_values(&co_gas, &no2_gas, &nh3_gas, &no_gas, &so2_gas);
+
+        mavlink_msg_gas_sensor_board_send(MAVLINK_COMM_0, hum, temp, baro, nh3_gas, no2_gas, co_gas, no_gas, so2_gas);
 
         // Define the system type, in this case an airplane
-        uint8_t system_type = MAV_TYPE_GIMBAL;
+        uint8_t system_type = MAV_TYPE_GENERIC;
         uint8_t autopilot_type = MAV_AUTOPILOT_INVALID;
 
         uint8_t system_mode = MAV_MODE_AUTO_ARMED; ///< Booting up
@@ -84,8 +87,8 @@ static THD_FUNCTION(MavlinkTx, arg) {
 
         // Pack the message
         mavlink_msg_heartbeat_send(MAVLINK_COMM_0, system_type, autopilot_type, system_mode, custom_mode, system_state);
-
         requset_gps_data_stream();
+
         chThdSleepMilliseconds(1000);
 	}
 }
@@ -123,12 +126,12 @@ void requset_gps_data_stream(void){
     /* Request stream with GPS coordinates */
     /* We should detect autopilot system  and use its sysid and comid and then requset stream
      * also use timeouts for rerequest etc. */
-    mavlink_msg_request_data_stream_send(MAVLINK_COMM_0, 1, 1, MAV_DATA_STREAM_POSITION, 10, 1);
+    mavlink_msg_request_data_stream_send(MAVLINK_COMM_0, 1, 1, MAV_DATA_STREAM_POSITION, 5, 1);
 }
 
 void init_telemetry() {
-	mavlink_system.sysid = 3;
-	mavlink_system.compid = MAV_COMP_ID_CAMERA;
+/*	mavlink_system.sysid = 3;
+	mavlink_system.compid = MAV_COMP_ID_CAMERA; */
 
 	palClearPad(GPIOB, GPIOB_STATUS_LED);
 	chVTObjectInit(&led_vt);

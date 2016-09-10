@@ -69,11 +69,11 @@ int main(void) {
     /*chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1,
             NULL);
 */
-    init_telemetry();
     init_analog();
     measure_sensors();
     //init_logging();
     //write_to_file();
+    init_telemetry(); //Init last to have all mtx objects init
 
     /*
      * Normal main() thread activity, in this demo it does nothing except
