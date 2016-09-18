@@ -76,19 +76,25 @@ void measure_sensors(void) {
     no2_gas = measureResistance();
 
     select_sensor(NH3_SENSOR);
+    chThdSleepMilliseconds(5);
     nh3_gas = measureResistance();
 
-
+    no_gas_avg = 0.0f;
+    so2_gas_avg= 0.0f;
 
     adcConvert(&ADCD1, &adcElChemOnlu, samples1, ADC_GRP1_BUF_DEPTH);
     for (int i = 0; i < 2 * ADC_GRP1_BUF_DEPTH; i += 2) {
-        no_gas_avg += samples1[i];
+        no_gas_avg += get_voltage(samples1[i]);
     }
     no_gas_avg /= ADC_GRP1_BUF_DEPTH;
+    no_gas_avg -= 1.646757679f;
+    no_gas_avg /= 1.5e-5f;
     for (int i = 1; i < 2 * ADC_GRP1_BUF_DEPTH; i += 2) {
-        so2_gas_avg += samples1[i];
+        so2_gas_avg += get_voltage(samples1[i]);
     }
     so2_gas_avg /= ADC_GRP1_BUF_DEPTH;
+    so2_gas_avg -= 1.646757679f;
+    so2_gas_avg /= 2e-4f;
     chMtxUnlock(&analog_data);
 
 }
@@ -146,37 +152,30 @@ float measureResistance(void) {
 
     float res_voltage = measure_resistance_voltage(); //Using all resistors
 
+    resistance = 12322300.0f * (1/((3.3f/res_voltage) - 1));
+
     if(res_voltage < SWITCH_TRESHOLD) {
         /* Switch to 1M resistor */
         palSetPadMode(GPIOB, GPIOB_1M_MES_SEL, PAL_MODE_OUTPUT_PUSHPULL);
         palSetPad(GPIOB,GPIOB_1M_MES_SEL);
-        res_voltage = measure_resistance_voltage(); //Using 1M+100K+6K8
+        res_voltage = measure_resistance_voltage(); //Using 1M2+100K+6K8
+        resistance = 1232230.0f * (1/((3.3f/res_voltage) - 1));
         if(res_voltage < SWITCH_TRESHOLD) {
             /* Switch to 100K resistor */
            palSetPadMode(GPIOB, GPIOB_100K_MES_SEL, PAL_MODE_OUTPUT_PUSHPULL);
            palSetPad(GPIOB,GPIOB_100K_MES_SEL);
            res_voltage = measure_resistance_voltage(); //Using 100K+6K8
+           resistance = 106230.0f * (1/((3.3f/res_voltage) - 1));
            if(res_voltage < SWITCH_TRESHOLD) {
                 /* Switch to 6K8 resistor */
                 palSetPadMode(GPIOB, GPIOB_6K8_MES_SEL, PAL_MODE_OUTPUT_PUSHPULL);
                 palSetPad(GPIOB, GPIOB_6K8_MES_SEL);
                 res_voltage = measure_resistance_voltage(); //Using 6K8
                 /* calculate resistance with  6800 ohm */
-                resistance = 6800.0f * (1/((3.3f/res_voltage) - 1));
-           } else {
-               /* calculate resistance with  106800 ohm */
-               resistance = 106800.0f * (1/((3.3f/res_voltage) - 1));
+                resistance = 6830.0f * (1/((3.3f/res_voltage) - 1));
            }
-
-        } else {
-            /* calculate resistance with  1306800 ohm */
-            resistance = 1306800.0f * (1/((3.3f/res_voltage) - 1));
         }
-    } else {
-        /* calculate resistance with  11306800 ohm */
-        resistance = 11306800.0f * (1/((3.3f/res_voltage) - 1));
     }
-
     return resistance;
 }
 
