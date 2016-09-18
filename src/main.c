@@ -44,7 +44,8 @@ int main(void) {
     chSysInit();
 
     //Initialize interfaces
-//  sdStart(&SD1, NULL);
+    sdStart(&SD1, NULL);
+
     i2cStart(&I2CD1, &i2cconfig);
     init_bme280();
 
@@ -54,7 +55,6 @@ int main(void) {
      */
     sduObjectInit(&SDU1);
     sduStart(&SDU1, &serusbcfg);
-    sdStart(&SD1, NULL);
 
     /*
      * Activates the USB driver and then the USB bus pull-up on D+.
@@ -81,6 +81,7 @@ int main(void) {
      * pressed the test procedure is launched.
      */
     while (true) {
+        measure_sensors();
         bme280_measurement();
         chThdSleepMilliseconds(1000);
     }

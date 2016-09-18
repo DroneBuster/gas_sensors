@@ -9,7 +9,7 @@
 #include "usbcfg.h"
 
 
-mavlink_system_t mavlink_system = {1, 50}; /* SysID, CompID */
+mavlink_system_t mavlink_system = {1, 100}; /* SysID, CompID */
 
 /**
  * @brief Send one char (uint8_t) over a comm channel
@@ -18,11 +18,11 @@ mavlink_system_t mavlink_system = {1, 50}; /* SysID, CompID */
  * @param ch Character to send
  */
 static void comm_send_ch(mavlink_channel_t chan, uint8_t ch) {
-    if(chan == MAVLINK_COMM_0) { /* USB */
-        chnPutTimeout(&SDU1, ch, MS2ST(5));
+    if(chan == MAVLINK_COMM_0) { /* UART1 */
+        chnPutTimeout(&SD1, ch, MS2ST(5));
     }
     if(chan == MAVLINK_COMM_1) {
-        chnPutTimeout(&SD1, ch, MS2ST(5));
+        chnPutTimeout(&SDU1, ch, MS2ST(5));
     }
 }
 
