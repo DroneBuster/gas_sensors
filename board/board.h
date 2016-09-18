@@ -49,9 +49,10 @@
 #define GPIOB_1M_MES_SEL       10
 #define GPIOB_100K_MES_SEL     11
 #define GPIOB_6K8_MES_SEL      12
-#define GPIOB_SEN_SEL1         13
+#define GPIOB_SEN_SEL3         13
 #define GPIOB_SEN_SEL2         14
-#define GPIOB_SEN_SEL3         15
+#define GPIOB_SEN_SEL1         15
+
 
 /*
  * I/O ports initial setup, this configuration is established soon after reset
